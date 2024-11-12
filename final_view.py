@@ -37,6 +37,8 @@ def main():
         st.session_state.selected_route_name = ''
     if "selected_star_rating" not in st.session_state:
         st.session_state.selected_star_rating = (0.0, 5.0)
+    if "rows_to_display" not in st.session_state:
+        st.session_state.rows_to_display = 20
 
     # Populate State Transport filter options
     state_transport = [''] + data['State_Transport'].unique().tolist()
@@ -82,15 +84,16 @@ def main():
         (filtered_df2['Star_Rating'] <= star_rating[1])
     ]
 
-    # Display data based on filters
-    if selected_state_transport and selected_route_name:
-        st.write(f"Current route has {len(final_filtered_df)} buses.")
-        st.dataframe(final_filtered_df, use_container_width=True, height=700)
-    elif selected_state_transport:
-        st.write(f"Current State transport has {len(filtered_df2)} buses.")
-        st.dataframe(filtered_df2, use_container_width=True, height=700)
-    else:
-        st.dataframe(filtered_df, use_container_width=True, height=700)
+    # Limit the number of rows displayed
+    rows_to_display = st.sidebar.slider("Number of rows to display", min_value=10, max_value=100, value=st.session_state.rows_to_display)
+    st.session_state.rows_to_display = rows_to_display
+
+    # Convert 'Route_Link' column into clickable links using Markdown
+    final_filtered_df['Route_Link'] = final_filtered_df['Route_Link'].apply(lambda x: f"[Link]({x})")
+
+    # Display data using markdown
+    st.write(f"Current route has {len(final_filtered_df)} buses.")
+    st.markdown(final_filtered_df.head(rows_to_display).to_markdown(index=False), unsafe_allow_html=True)
 
     # Reset button logic
     if st.sidebar.button("Reset", type="primary"):
@@ -100,6 +103,7 @@ def main():
         st.session_state.selected_state_transport = ''
         st.session_state.selected_route_name = ''
         st.session_state.selected_star_rating = (0.0, 5.0)
+        st.session_state.rows_to_display = 20
 
         # Reset the state of the filters
         st.experimental_set_query_params(reset="true")
@@ -108,7 +112,7 @@ def main():
     if st.experimental_get_query_params().get("reset") == ["true"]:
         # Clear the query params
         st.experimental_set_query_params()
-        st.experimental_rerun()  # Trigger the rerun after clearing query params
+        #st.experimental_rerun()  # Trigger the rerun after clearing query params
 
 if __name__ == "__main__":
     main()
